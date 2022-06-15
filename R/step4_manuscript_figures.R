@@ -5,11 +5,12 @@ library(readxl)
 library(ggrepel)
 
 # Image 1 ####
-xdat<- read_excel("../data/effort data FDI.xlsx")
+xdat<- read_excel("../data/FDI effort by country.xlsx",
+                  sheet = "FDI effort by country")
 names(xdat)=str_replace(names(xdat), ' ', '_')
 names(xdat)=str_replace(names(xdat), ' ', '_')
-unique(xdat$Country_code)
-
+unique(xdat$`Sub-region`)
+xdat=xdat[xdat$`Sub-region` %in% c("GSA17", "GSA18"),]
 xdat$Gear_Type=ifelse(xdat$Country_code=='HRV'& xdat$Gear_Type=='DRB', 'TBB', xdat$Gear_Type) # Croatian dredges are treated as beam trawlers
 
 xdat=xdat%>%dplyr::mutate(Hours_at_Sea=as.numeric(Hours_at_Sea),
@@ -38,7 +39,7 @@ ggplot()+
   scale_fill_brewer(palette = "YlOrRd",name = "", labels = c("Fishing Days", "Fishing Hours", "Hours at Sea"))+
   theme_bw()+
   ylab('Change in effort 2020 vs 2019 (%)')+
-  xlab('Metiér')+
+  xlab('MetiÃ¨r')+
   scale_y_continuous(breaks = seq(-30,20,5))+
   theme(legend.position = 'bottom')
 
@@ -146,7 +147,7 @@ ggplot(data=dat, aes(B,F, label=name)) +
 ggsave('../images/Fig4_kobe_CMSY_difference.JPG', width = 15, height = 15, dpi=500, units='cm')
 
 
-# Image XX
+# Images 5 and 6
 xfiles=list.files("../results")
 xfiles=xfiles[grep('Out',xfiles)]
 
