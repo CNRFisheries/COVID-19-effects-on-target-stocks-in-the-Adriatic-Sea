@@ -27,4 +27,4 @@ ggplot(data=files)+
   theme(legend.position = 'bottom')+
   ggtitle('CMSY BSM estimates for models ending in 2019 and in 2020')
 
-ggsave('../images/BSM_raw_estimates.jpeg', width=20, height=20,units='cm', dpi=500)
+ggsave('../images//FigSI1_BSM_raw_estimates.jpeg', width=20, height=20,units='cm', dpi=500)

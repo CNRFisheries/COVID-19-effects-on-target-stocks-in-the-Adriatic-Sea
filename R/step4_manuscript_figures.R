@@ -60,7 +60,7 @@ stocknames=data.frame(Stock=c("HKE_17_18","DPS_17_18_19","MUT_17_18","SOL_17","P
 
 xdatF2=merge(xdatF2, stocknames)
 
-ggplot(data=xdatF2, aes(bt,ct, label=name)) + 
+ggplot(data=xdatF2, aes(bt,ct, label=substr(Stock,1,3))) + 
   annotate("rect", xmin = Inf, xmax = 1, ymin = Inf, ymax = 1, fill= "orange")  + 
   annotate("rect", xmin = -Inf, xmax = 1, ymin = -Inf, ymax = 1 , fill= "yellow") + 
   annotate("rect", xmin = 1, xmax = Inf, ymin = 1, ymax = -Inf, fill= "green") + 
@@ -103,6 +103,8 @@ dat=plyr::ldply(store_res)%>%
   pivot_wider(names_from = type, values_from = value)
 
 dat=merge(dat, stocknames)
+library(viridis)
+mycols=rainbow(32)[seq(1,32,4)]
 
 
 ggplot() + 
@@ -110,7 +112,7 @@ ggplot() +
   annotate("rect", xmin = -Inf, xmax = 1, ymin = -Inf, ymax = 1 , fill= "yellow") + 
   annotate("rect", xmin = 1, xmax = Inf, ymin = 1, ymax = -Inf, fill= "green") + 
   annotate("rect", xmin = 1, xmax = -Inf, ymin = Inf, ymax = 1, fill= "red") + 
-  geom_point(data=dat, aes(BBmsy,FFmsy, pch=factor(year), color=factor(name)),size=5)+
+  geom_point(data=dat, aes(BBmsy,FFmsy, pch=factor(year)),size=5)+
   ylab(expression(F/F[MSY]))+
   xlab(expression(B/B[MSY]))+
   labs(color='Stock', pch='Year')+
@@ -118,8 +120,10 @@ ggplot() +
         legend.box = "vertical")+
   guides(pch=guide_legend(override.aes=list(size=2)),
          color=guide_legend(override.aes=list(size=1)))+
-  geom_path(data=dat, aes(BBmsy,FFmsy, color=factor(name)))+
-  scale_color_viridis_d()
+  geom_path(data=dat, aes(BBmsy,FFmsy, fill=factor(name)))+
+  #scale_color_manual(values = mycols)+
+  geom_label_repel(data=dat[dat$year=='2019',], aes(BBmsy,FFmsy, label=substr(Stock,1,3)))
+
 
 
 ggsave('../images/Fig3_kobe_CMSY_results.JPG', width = 15, height = 15, dpi=500, units='cm')
@@ -127,12 +131,12 @@ ggsave('../images/Fig3_kobe_CMSY_results.JPG', width = 15, height = 15, dpi=500,
 
 # Image 4 ####
 dat=dat%>%
-  dplyr::select(name,year,BBmsy,FFmsy)%>%
+  dplyr::select(Stock,year,BBmsy,FFmsy)%>%
   pivot_wider(names_from = year, values_from = c(FFmsy, BBmsy))
 dat$B=dat$BBmsy_2020/dat$BBmsy_2019
 dat$F=dat$FFmsy_2020/dat$FFmsy_2019
 
-ggplot(data=dat, aes(B,F, label=name)) + 
+ggplot(data=dat, aes(B,F, label=substr(Stock,1,3))) + 
   annotate("rect", xmin = Inf, xmax = 1, ymin = Inf, ymax = 1, fill= "orange")  + 
   annotate("rect", xmin = -Inf, xmax = 1, ymin = -Inf, ymax = 1 , fill= "yellow") + 
   annotate("rect", xmin = 1, xmax = Inf, ymin = 1, ymax = -Inf, fill= "green") + 
@@ -193,6 +197,7 @@ for(i in 1:length(xfiles)){
   
 }
 
+CMSY_trajectories$stock=substr(CMSY_trajectories$stock,1,3)
 
 
 ggplot(data=CMSY_trajectories, aes(x=year, y=BBmsy, color=ref_year))+
