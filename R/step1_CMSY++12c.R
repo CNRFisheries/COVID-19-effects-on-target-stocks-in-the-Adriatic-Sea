@@ -54,7 +54,7 @@ n.chains     <- 2 # number of chains to be used in JAGS, default = 2
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) # set working directory to source file location
 
 
-final_year=2019
+final_year=2020
 #-----------------------------------------
 # Required settings, File names ----
 #-----------------------------------------
@@ -65,7 +65,7 @@ outfile     <- paste(final_year, "_Out_",format(Sys.Date(),format="%B%d%Y_"),id_
 #----------------------------------------
 # Select stock to be analyzed ----
 #----------------------------------------
-stocks      <- 'HKE_17_18'
+stocks      <- NA
 
 # If the input files contain more than one stock, specify below the stock to be analyzed
 # If the line below is commented out (#), all stocks in the input file will be analyzed
