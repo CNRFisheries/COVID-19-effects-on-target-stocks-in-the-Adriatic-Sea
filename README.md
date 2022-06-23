@@ -1,6 +1,8 @@
 # The potential effects of COVID-19 lockdown and the following restrictions on the status of eight target stocks in the Adriatic Sea
 
 This repo accompanies the manuscript _"The potential effects of COVID-19 lockdown and the following restrictions on the status of eight target stocks in the Adriatic Sea"_.
+
+All the required data for catches and biomass are stored in the _data_ folder.
 To run the analysis proceed as follow:
 * clone the repository on your machine
 * clean out the results folder: **_it must be empty_**
