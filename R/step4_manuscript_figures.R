@@ -3,47 +3,145 @@ library(plyr)
 library(tidyverse)
 library(readxl)
 library(ggrepel)
+library(gtable)
+library(cowplot)
+library(grid)
 
 # Image 1 ####
-xdat<- read_excel("../data/FDI effort by country.xlsx",
-                  sheet = "FDI effort by country")
-names(xdat)=str_replace(names(xdat), ' ', '_')
-names(xdat)=str_replace(names(xdat), ' ', '_')
-unique(xdat$`Sub-region`)
-xdat=xdat[xdat$`Sub-region` %in% c("GSA17", "GSA18"),]
-xdat$Gear_Type=ifelse(xdat$Country_code=='HRV'& xdat$Gear_Type=='DRB', 'TBB', xdat$Gear_Type) # Croatian dredges are treated as beam trawlers
 
-xdat=xdat%>%dplyr::mutate(Hours_at_Sea=as.numeric(Hours_at_Sea),
-                Total_Fishing_Days=as.numeric(Total_Fishing_Days),
-                Gear_Type=ifelse(Gear_Type %in% c('FPO','FYK','GND','GNS','GTN','GTR','HMD','LHM','LHP','LLD', 'LLS','LTL'), 'Passive', 
-                                 ifelse(Gear_Type %in% c('OTM', 'NK', 'SB', 'SV'), 'Other', Gear_Type)))%>%
+# Load and arrange FDI data
+FDI_dat<- read_excel("../data/FDI effort by country.xlsx",
+                  sheet = "FDI effort by country")
+names(FDI_dat)=str_replace(names(FDI_dat), ' ', '_')
+names(FDI_dat)=str_replace(names(FDI_dat), ' ', '_')
+FDI_dat=FDI_dat[FDI_dat$`Sub-region` %in% c("GSA17", "GSA18"),]
+FDI_dat$Gear_Type=ifelse(FDI_dat$Country_code=='HRV'& FDI_dat$Gear_Type=='DRB', 'TBB', FDI_dat$Gear_Type) # Croatian dredges are treated as beam trawlers
+
+xdatQuarterFDI=FDI_dat%>%dplyr::mutate(Hours_at_Sea=as.numeric(Hours_at_Sea),
+                                 Total_Fishing_Days=as.numeric(Total_Fishing_Days),
+                                 Gear_Type=ifelse(Gear_Type %in% c('FPO','FYK','GND','GNS','GTN','GTR','HMD','LHM','LHP','LLD', 'LLS','LTL'), 'Passive', 
+                                                  ifelse(Gear_Type %in% c('OTM', 'NK', 'SB', 'SV'), 'Other', Gear_Type)))%>%
   dplyr::filter(!is.na(Hours_at_Sea))%>%
-  dplyr::group_by(year,Gear_Type )%>%
+  dplyr::group_by(year,Gear_Type,Quarter )%>%
   dplyr::summarise(hours=sum(Hours_at_Sea), FD=sum(Total_Fishing_Days))%>%
   dplyr::filter(year >=2019)%>%
-  pivot_longer(-c(year, Gear_Type))%>%
+  pivot_longer(-c(year, Gear_Type, Quarter))%>%
   dplyr::mutate(year=paste0('y',year))%>%
   pivot_wider(names_from = year, values_from = value)%>%
   dplyr::mutate(delta=round((((y2020/y2019)-1)*100), digits=2))%>%
-  arrange(name, Gear_Type)%>%
-  rbind(data.frame(Gear_Type=c('OTB','TBB','PTM','PS', 'DRB','Passive','Other'),
-                   name=rep('Fishing_hours',7),
-                   y2019=rep(999,7), y2020=rep(999,7),
-                   delta=c(-3, -19, -6, -1,0,0,0)))
+  arrange(name, Gear_Type)
+
+xdatQuarterFDI=xdatQuarterFDI[xdatQuarterFDI$Gear_Type %in% c('OTB', 'Passive', 'PS', 'PTM','TBB'),]
+
+# Load and arrange effort data from AIS. These comes from the manuscript "COVID-19 lockdowns reveal the resilience of Adriatic Sea fisheries to forced fishing effort reduction", available at https://www.nature.com/articles/s41598-022-05142-w
+effortCoro=read_csv("../data/effort_Coro_2022.csv")%>%
+  dplyr::filter(years>=2019)%>%
+  pivot_longer(-c(years, gear, quarter))%>%
+  dplyr::mutate(years=paste0('y',years),
+                name='Fishing_hours')%>%
+  pivot_wider(names_from = years, values_from = value)%>%
+  dplyr::mutate(delta=round((((y2020/y2019)-1)*100), digits=2))%>%
+  arrange(name, gear)
+names(effortCoro)=c('Quarter', 'Gear_Type', names(effortCoro)[3:ncol(effortCoro)])
+
+xdatEffort=rbind(xdatQuarterFDI, effortCoro)
+
+# define function to arrange legend. Code from https://stackoverflow.com/questions/54438495/shift-legend-into-empty-facets-of-a-faceted-plot-in-ggplot2
+shift_legend <- function(p){
+  
+  # check if p is a valid object
+  if(!"gtable" %in% class(p)){
+    if("ggplot" %in% class(p)){
+      gp <- ggplotGrob(p) # convert to grob
+    } else {
+      message("This is neither a ggplot object nor a grob generated from ggplotGrob. Returning original plot.")
+      return(p)
+    }
+  } else {
+    gp <- p
+  }
+  
+  # check for unfilled facet panels
+  facet.panels <- grep("^panel", gp[["layout"]][["name"]])
+  empty.facet.panels <- sapply(facet.panels, function(i) "zeroGrob" %in% class(gp[["grobs"]][[i]]))
+  empty.facet.panels <- facet.panels[empty.facet.panels]
+  if(length(empty.facet.panels) == 0){
+    message("There are no unfilled facet panels to shift legend into. Returning original plot.")
+    return(p)
+  }
+  
+  # establish extent of unfilled facet panels (including any axis cells in between)
+  empty.facet.panels <- gp[["layout"]][empty.facet.panels, ]
+  empty.facet.panels <- list(min(empty.facet.panels[["t"]]), min(empty.facet.panels[["l"]]),
+                             max(empty.facet.panels[["b"]]), max(empty.facet.panels[["r"]]))
+  names(empty.facet.panels) <- c("t", "l", "b", "r")
+  
+  # extract legend & copy over to location of unfilled facet panels
+  guide.grob <- which(gp[["layout"]][["name"]] == "guide-box")
+  if(length(guide.grob) == 0){
+    message("There is no legend present. Returning original plot.")
+    return(p)
+  }
+  gp <- gtable_add_grob(x = gp,
+                        grobs = gp[["grobs"]][[guide.grob]],
+                        t = empty.facet.panels[["t"]],
+                        l = empty.facet.panels[["l"]],
+                        b = empty.facet.panels[["b"]],
+                        r = empty.facet.panels[["r"]],
+                        name = "new-guide-box")
+  
+  # squash the original guide box's row / column (whichever applicable)
+  # & empty its cell
+  guide.grob <- gp[["layout"]][guide.grob, ]
+  if(guide.grob[["l"]] == guide.grob[["r"]]){
+    gp <- gtable_squash_cols(gp, cols = guide.grob[["l"]])
+  }
+  if(guide.grob[["t"]] == guide.grob[["b"]]){
+    gp <- gtable_squash_rows(gp, rows = guide.grob[["t"]])
+  }
+  gp <- gtable_remove_grobs(gp, "guide-box")
+  
+  return(gp)
+}
 
 
-xdat=xdat[xdat$Gear_Type %in% c('OTB', 'Passive', 'PS', 'PTM','TBB'),]
 
-ggplot()+
-  geom_col(aes(x=Gear_Type, y=delta, fill=name), data=xdat, 'dodge',color='black')+
+xdatEffortYear=xdatEffort%>%
+  dplyr::group_by(Gear_Type, name)%>%
+  dplyr::summarise(y2019=sum(y2019),
+                   y2020=sum(y2020))%>%
+  dplyr::mutate(delta=round((((y2020/y2019)-1)*100), digits=2))
+
+xdatEffortYear$pos=ifelse(xdatEffortYear$name=='FD', -20,ifelse(xdatEffortYear$name=='Fishing_hours',-10,0))
+
+?geom_label
+# plot
+p=ggplot()+
+  geom_col(aes(x=Quarter, y=delta, fill=name), data=xdatEffort, 'dodge',color='black')+
+  geom_label(
+    data    = xdatEffortYear,
+    mapping = aes(x = 4.8, y = pos, label = delta, fill=name), color='black', show.legend = F)+
+  annotate(geom= 'text', x=4.8,y=10,label='Overall')+
   scale_fill_brewer(palette = "YlOrRd",name = "", labels = c("Fishing Days", "Fishing Hours", "Hours at Sea"))+
+  scale_color_brewer(palette = "YlOrRd",name = "", labels = c("Fishing Days", "Fishing Hours", "Hours at Sea"))+
   theme_bw()+
+  xlab('Quarter')+
   ylab('Change in effort 2020 vs 2019 (%)')+
-  xlab('Metièr')+
-  scale_y_continuous(breaks = seq(-30,20,5))+
-  theme(legend.position = 'bottom')
+  scale_y_continuous(breaks = seq(-100,100,10))+
+  scale_x_continuous(breaks = seq(0,4,1))+
+  theme(legend.position = 'bottom')+
+  facet_wrap(~Gear_Type);p
 
-ggsave('../images/Fig1_effort_comparison.JPG', width = 15,height = 10,units='cm', dpi=500)
+p.new=p +
+  guides(fill = guide_legend(title.position = "top",
+                             label.position = "bottom",
+                             nrow = 1))
+
+png('../images/Fig1_effort_comparison.png', width = 42,height = 17,units='cm', res=500)
+grid.draw(shift_legend(p.new))
+dev.off()
+
+
 
 # Image 2 ####
 xdatF2= read_csv("../data/CMSY_INPUT_STOCKS_PRODUCTION.csv")%>%
@@ -200,7 +298,7 @@ for(i in 1:length(xfiles)){
 CMSY_trajectories$stock=substr(CMSY_trajectories$stock,1,3)
 
 
-ggplot(data=CMSY_trajectories, aes(x=year, y=BBmsy, color=ref_year))+
+pbiomass=ggplot(data=CMSY_trajectories, aes(x=year, y=BBmsy, color=ref_year))+
   geom_line()+
   facet_wrap(~stock, scales='free')+
   ggtitle(expression(Trajectories~of~B/B[MSY]))+
@@ -210,9 +308,16 @@ ggplot(data=CMSY_trajectories, aes(x=year, y=BBmsy, color=ref_year))+
   theme(legend.position = 'bottom')+
   ylab(expression(B/B[MSY]))
 
-ggsave('../images/FigSI2_BBmsy_trajectories.JPG', width = 25, height = 25, dpi=500, units='cm')
+pbiomass.new=pbiomass +
+  guides(color = guide_legend(title.position = "top",
+                             label.position = "bottom",
+                             nrow = 1))
 
-ggplot(data=CMSY_trajectories, aes(x=year, y=FFmsy, color=ref_year))+
+png('../images/FigSI2_BBmsy_trajectories.JPG', width = 25,height = 15,units='cm', res=500)
+grid.draw(shift_legend(pbiomass.new))
+dev.off()
+
+pF=ggplot(data=CMSY_trajectories, aes(x=year, y=FFmsy, color=ref_year))+
   geom_line()+
   facet_wrap(~stock, scales='free')+
   ggtitle(expression(Trajectories~of~F/F[MSY]))+
@@ -221,6 +326,15 @@ ggplot(data=CMSY_trajectories, aes(x=year, y=FFmsy, color=ref_year))+
   labs(color='Reference year')+
   theme(legend.position = 'bottom')+
   ylab(expression(F/F[MSY]))
+
+pF.new=pF +
+  guides(color = guide_legend(title.position = "top",
+                              label.position = "bottom",
+                              nrow = 1))
+
+png('../images/FigSI3_FFmsy_trajectories.JPG', width = 25,height = 15,units='cm', res=500)
+grid.draw(shift_legend(pF.new))
+dev.off()
 
 ggsave('../images/FigSI3_FFmsy_trajectories.JPG', width = 25, height = 25, dpi=500, units='cm')
 
