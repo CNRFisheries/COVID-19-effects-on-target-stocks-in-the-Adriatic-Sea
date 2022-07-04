@@ -53,7 +53,6 @@ FullSchaefer <- F    # initialize variable; automatically set to TRUE if enough 
 n.chains     <- 2 # number of chains to be used in JAGS, default = 2
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) # set working directory to source file location
 
-
 final_year=2020
 #-----------------------------------------
 # Required settings, File names ----
