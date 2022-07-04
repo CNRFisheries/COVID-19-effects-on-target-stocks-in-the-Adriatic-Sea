@@ -1,24 +1,17 @@
-# The potential effects of COVID-19 lockdown and the following restrictions on the status of eight target stocks in the Adriatic Sea
+# Data sources
 
-This repo accompanies the manuscript _"The potential effects of COVID-19 lockdown and the following restrictions on the status of eight target stocks in the Adriatic Sea"_.
+Data contained in the present folder are derived from the following open source reports:
 
-All the required data for catches and biomass are stored in the _data_ folder.
-To run the analysis proceed as follow:
-* clone the repository on your machine
-* clean out the results folder: **_it must be empty_**
-* open the R project first
-* open the script ```step1_CMSY++12c.R``` and run it twice: once having _final_year_ parameter (line 57) set as 2019 and once having _final_year_ parameter set as 2020.
+FAO. 2021a. Scientific Advisory Committee on Fisheries ( SAC ) Working Group on Stock Assessment of Demersal Species ( WGSAD ), Online, 18–23 January 2021 (western Mediterranean) Online, 25–30 January 2021 (central and eastern Mediterranean and Adriatic Sea), 1: 13–18. https://www.fao.org/gfcm/technical-meetings/detail/ru/c/1412431/.
 
-**NOTE:** the script applies the surplus production model CMSY++, from [Froese et al., 2017](https://enriconarmelloni.github.io/SOLEA/) and also available [at this repo](https://github.com/SISTA16/cmsyPlusPlus), on the selected target stocks in the Adriatic Sea. The algorithm is the original version, slight modifications were applied to the script to allow BSM results extraction. For the purpose of the analysis, two stock assessments per stock are done: one on the data up to 2019 and one on the data up to 2020. To do so the script have to be run twice, changing the _final_year_ parameter (line 57).
+FAO. 2021b. Scientific Advisory Committee On Fisheries ( SAC ) Working Group on Stock Assessment of Demersal Species ( WGSAD ) - Benchmark session for the assessment of common sole in GSA 17 , Online, 12-16 April 2021. 70 pp.
 
-* open the script ```step2_handle_estimations.R``` and run it
+FAO. 2021c. Working Group on Stock Assessment of Small Pelagic species (WGSASP), Online, 18–23 January 2021: 74. https://www.fao.org/gfcm/technical-meetings/detail/ru/c/1412431/.
 
-**NOTE:** the script merge toghether the BSM model estimations for all the stocks to be used by the next script.
+FAO. 2022a. Scientific Advisory Committee on Fisheries ( SAC ) Working Group on Stock Assessment of Demersal species ( WGSAD ) ( western Mediterranean ) ( central and eastern Mediterranean and Adriatic Sea ), 2022: 24–28. https://www.fao.org/gfcm/technical-meetings/detail/en/c/1506058/.
 
-* open the script ```step3_bootstrap_analysis.R``` and run it
+FAO. 2022b. Scientific Advisory Committee on Fisheries (SAC) Working Group on Stock Assessment of Small Pelagic Species (WGSASP). Session on the assessment of European anchovy and sardine in the Adriatic Sea Online., 11: 67. https://www.fao.org/gfcm/technical-meetings/detail/en/c/1542569/.
 
-**NOTE:** the script perform a bootstrap analysis to test difference between BSM model estimations for 2019 and 2020.
+STECF. 2020. Scientific, Technical and Economic Committee for Fisheries (STECF)- Stock Assessments: demersal stocks in the western Mediterranean Sea (STECF-20-09). EUR 28359 EN, Publications Office of the European Union, Luxembourg, 2020. https://stecf.jrc.ec.europa.eu/documents/43805/1446742/STECF+16-14+-+Methods+for+MED+stock+assessments_JRC102680.pdf.
 
-* open the script ```step4_manuscript_figures.R``` and run it
-
-**NOTE:** the script extract various results and generates the figures.
+STECF. 2021. Scientific, Technical and Economic Committee for Fisheries (STECF) – Stock assessments in the Mediterranean Sea 2021 – (Adriatic and Ionian Seas) (STECF-21-15). Publications Office of the European Union, Luxembourg,2021.
